@@ -18,6 +18,7 @@ public class BoardImageAdapter extends BaseAdapter
 	
 	private boolean mIsAutoRotateEnabled;
 	private boolean mIsBoardExpanded;
+	private boolean mIsKillEnabled;
 	// TODO: Find a better way to accomplish this functionality (needing this
 	// extra boolean and long boolean name makes things a little harry):
 	private boolean mWasRotateDisabledDuringLightsTurn;
@@ -33,7 +34,8 @@ public class BoardImageAdapter extends BaseAdapter
     }
     
     public BoardImageAdapter( Context c, GameModel g, boolean autoRotEnabled, 
-    						  boolean expand, boolean disabledDuringWhitesTurn)
+    						  boolean expand, boolean disabledDuringWhitesTurn,
+    						  boolean killEnabled)
     {
     	// CTOR used for restoring an existing game:
         mContext = c;
@@ -41,9 +43,15 @@ public class BoardImageAdapter extends BaseAdapter
         mBoardWidthWithBorder_inPixels = 0;
         mIsAutoRotateEnabled = autoRotEnabled;
         mIsBoardExpanded = expand;
+        mIsKillEnabled = killEnabled;
         mWasRotateDisabledDuringLightsTurn = disabledDuringWhitesTurn;
     }
 
+    public void flipTurn()
+    {
+    	mGameModel.flipTurn();
+    }
+    
     public int getCount()
     {
     	// A board has 64 squares:
@@ -156,6 +164,16 @@ public class BoardImageAdapter extends BaseAdapter
 		return mIsBoardExpanded;
 	}
 	
+	public void setIsKillEnabled(boolean isKill)
+	{
+		mIsKillEnabled = isKill;
+	}
+	
+	public boolean getIsKillEnabled()
+	{
+		return mIsKillEnabled;
+	}
+	
   // Call through methods:
 	
 	public GameModel getStartPositionModel()
@@ -171,6 +189,16 @@ public class BoardImageAdapter extends BaseAdapter
     	// Call through to model:
 		boolean isPawnPromotion = mGameModel.updateAfterMove(startPos, endPos);
 		return isPawnPromotion;
+	}
+	
+	public boolean isLightPiece(int pos)
+	{
+		return GameModel.isLightPiece(mGameModel.getPieceAtSquare(pos));
+	}
+	
+	public boolean isDarkPiece(int pos)
+	{
+		return GameModel.isDarkPiece(mGameModel.getPieceAtSquare(pos));
 	}
 	
 	public boolean isValidForDrag(int positionOfPiece)
@@ -334,5 +362,13 @@ public class BoardImageAdapter extends BaseAdapter
 			useLight = false;
 			
 		return useLight;
+	}
+
+	public boolean killPiece(int currPosit) {
+		if(mGameModel.killPiece(currPosit)) {
+			this.notifyDataSetChanged();
+			return true;
+		}
+		return false;
 	}
 }

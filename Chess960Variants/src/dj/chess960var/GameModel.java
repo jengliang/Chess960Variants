@@ -56,7 +56,6 @@ public class GameModel
     	// 'R' => Rook
     	// 'Q' => Queen
     	// 'K' => King
-    	//
     	// 'eS' => empty Square
     	//
     	lP, lN, lB, lR, lQ, lK, dP, dN, dB, dR, dQ, dK, eS
@@ -151,6 +150,11 @@ public class GameModel
     		///////mModelForUndo = null;
     	///////else
     		///////mModelForUndo = new GameModel(gM.mModelForUndo);
+    }
+    
+    public void flipTurn()
+    {
+    	mIsLightsTurn = !mIsLightsTurn;
     }
     
 	public void resetRow(int row)
@@ -382,6 +386,16 @@ public class GameModel
     	return this.getImageOfPieceAtSquare(row, column, lightPersp);
     }
     
+    public boolean killPiece(int pos)
+    {
+		int row = Utilities.getRowGivenPosition(pos);
+		int col = Utilities.getColumnGivenPosition(pos);
+		mGameRep[row][col] = pc.eS;
+		// TODO: don't kill the king
+		//       other state variable needs to be updated?
+		return true;
+    }
+    
 	public boolean updateAfterMove(int startPos, int endPos)
 	{
 		int startRow = Utilities.getRowGivenPosition(startPos);
@@ -395,7 +409,7 @@ public class GameModel
 	{
 		return mIsLightsTurn;
 	}
-    
+   
 	public boolean isValidForDrag(int positionOfPiece)
 	{
 		// Need to check things like whose turn it is and what color piece is

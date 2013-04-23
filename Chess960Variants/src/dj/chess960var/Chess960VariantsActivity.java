@@ -95,12 +95,16 @@ public class Chess960VariantsActivity extends Activity
 			boolean expandEnabled = 
 				savedInstanceState.getBoolean("is expand enabled");
 			
+			boolean killEnabled = 
+				savedInstanceState.getBoolean("is kill enabled");
+			
 			BoardImageAdapter newAdap = 
 				new BoardImageAdapter( this,
 									   mGameModelForRestore,
 									   autoRotateEnabled,
 									   expandEnabled,
-									   rotateDisabledDuringLightsTurn );
+									   rotateDisabledDuringLightsTurn,
+									   killEnabled);
 			
 			gv1.setAdapter( newAdap );
 		}
@@ -132,6 +136,10 @@ public class Chess960VariantsActivity extends Activity
 		boolean isExpandEnabled = 
 			getBoardImageAdapter().getIsExpanded();
 		outState.putBoolean("is expand enabled", isExpandEnabled);
+		
+		boolean isKillEnabled =
+			getBoardImageAdapter().getIsKillEnabled();
+		outState.putBoolean("is kill enabled", isKillEnabled);
 		
         // Save the modeled game for restoring it (ie. after screen has been
         // rotated, for example):
@@ -304,6 +312,27 @@ public class Chess960VariantsActivity extends Activity
 			soundToggleButton.setImageResource(R.drawable.sound_enabled);
 		else
 			soundToggleButton.setImageResource(R.drawable.sound_disabled);
+	}
+	
+	public void toggleKill(View view)
+	{
+		// * Note: view passed in is a reference to the widget that was clicked
+		
+		// Negate current value:
+		boolean isKillEnabled = 
+			!getBoardImageAdapter().getIsKillEnabled();
+		
+		getBoardImageAdapter().setIsKillEnabled(isKillEnabled);
+		
+		ImageButton killToggleButton = 
+			(ImageButton) findViewById(R.id.killToggleButton);
+		
+		if(isKillEnabled)
+			killToggleButton.setImageResource(
+				R.drawable.kill_enabled);
+		else
+			killToggleButton.setImageResource(
+				R.drawable.kill_disabled);		
 	}
 	
 	public void toggleAutoRotate(View view)
@@ -616,6 +645,16 @@ public class Chess960VariantsActivity extends Activity
         return boardImageAdap;
 	}
 	
+	private void clearTargetMarkers()
+	{
+        GridView gv1 = (GridView) findViewById(R.id.boardGrid);
+        BoardImageAdapter boardImageAdap = (BoardImageAdapter) gv1.getAdapter();
+        int count = gv1.getChildCount();
+        for(int i = 0; i < count; ++i) {
+            ((ImageView) gv1.getChildAt(i)).setBackgroundResource(0);
+        }		
+	}
+	
 	private void setUpButtons()
 	{
 		// Enables/disables button based on whether or not the game has started.  
@@ -798,6 +837,14 @@ public class Chess960VariantsActivity extends Activity
 				expandToggleButton.setImageResource(
 					R.drawable.expand_enabled);
 			}
+
+			if( getBoardImageAdapter().getIsKillEnabled() )
+			{
+				ImageButton killToggleButton = 
+					(ImageButton) findViewById(R.id.killToggleButton);
+				killToggleButton.setImageResource(
+					R.drawable.kill_enabled);
+			}
 			
 			if( getBoardImageAdapter().getGameModel().getLightAI1() )
 			{
@@ -922,6 +969,7 @@ public class Chess960VariantsActivity extends Activity
 		
 		this.setUpButtons();
 		this.clearHighlightsOnBoard();
+		this.clearTargetMarkers();
 	}
 	
 	private void displayPawnPromoPopup(boolean isLightsTurn, int boardWidth)
@@ -971,9 +1019,11 @@ public class Chess960VariantsActivity extends Activity
 		GridView gv1 = (GridView) findViewById(R.id.boardGrid);
         int count = gv1.getChildCount();
             
-        for (int i = 0; i < count; i++)
-        	if( !getBoardImageAdapter().isSquareEmpty(i) )
+        for (int i = 0; i < count; i++) {
+        	if( !getBoardImageAdapter().isSquareEmpty(i) ) {
         		((ImageView) gv1.getChildAt(i)).setBackgroundDrawable(null);
+        	}
+        }
         
         mStartOfMoveSquare = mINVALIDSQUARE;
 	}
@@ -1055,7 +1105,8 @@ public class Chess960VariantsActivity extends Activity
             
             BoardImageAdapter boardImageAdap = 
             	(BoardImageAdapter) gv1.getAdapter();
-            
+
+            int count = gv1.getChildCount();
             switch (action)
             {
          
@@ -1068,6 +1119,35 @@ public class Chess960VariantsActivity extends Activity
                 break;
                 
             case DragEvent.ACTION_DRAG_ENTERED:
+    			// highlight available target positions of the piece at end position, if any
+                if( (mStartOfMoveSquare == mINVALIDSQUARE) &&
+        				(boardImageAdap.isLightPiece(endPosit) ||
+        				 boardImageAdap.isDarkPiece(endPosit)) )
+        		{
+                	int targetId = (boardImageAdap.isLightPiece(endPosit))?R.drawable.light_target:R.drawable.dark_target;
+                	
+    	        	// isValidMove() can crash if currPosit points to a piece that is
+    	        	// for next turn, and that piece can check 
+                	// temporarily flip turn to avoid the crash
+                	boolean flipTurn = (boardImageAdap.isLightsTurn() !=
+                			            boardImageAdap.isLightPiece(endPosit));
+                	
+                	if(flipTurn) {
+                		boardImageAdap.flipTurn();
+                	}
+                	
+        	        for(int trgPosit = 0; trgPosit < count; ++trgPosit) {
+        	            if( boardImageAdap.isValidMove(endPosit,trgPosit) )
+        	            {
+        	              	((ImageView) gv1.getChildAt(trgPosit)).setBackgroundResource(targetId);
+        	            }
+        	        }
+        	        
+                	if(flipTurn) {
+                		boardImageAdap.flipTurn();
+                	}
+        	    }
+        			            
                 if( boardImageAdap.isValidMove(mStartPos,endPosit) )
                 {
                 	((ImageView) gv1.getChildAt(endPosit)).
@@ -1087,7 +1167,7 @@ public class Chess960VariantsActivity extends Activity
             	v.invalidate();
                 break;
                 
-            case DragEvent.ACTION_DROP:
+            case DragEvent.ACTION_DROP:               
                 if (event.getLocalState() == v) 
                 {
                     result = false;
@@ -1138,7 +1218,7 @@ public class Chess960VariantsActivity extends Activity
                 		
                 		mIsPawnPromo = boardImageAdap.updateAfterMove(
                 						   mStartPos,endPosit);
-                		
+                		clearTargetMarkers();
                 		setUpButtons();
                 		
                 		if(mIsPawnPromo)
@@ -1212,7 +1292,51 @@ public class Chess960VariantsActivity extends Activity
                 currPosit = parent.pointToPosition(x, y);
                 
                 int count = parent.getChildCount();
+
+                // are we in the mood for some killings?
+                if(getBoardImageAdapter().getIsKillEnabled() &&
+                   (getBoardImageAdapter().isLightPiece(currPosit) ||
+        		    getBoardImageAdapter().isDarkPiece(currPosit)))
+                {
+                	if(getBoardImageAdapter().killPiece(currPosit)) {
+                        redrawScreen();
+                	}
+                	return true;
+                }
                 
+    			// highlight available target positions of this piece
+                if(getBoardImageAdapter().isLightPiece(currPosit) ||
+        		   getBoardImageAdapter().isDarkPiece(currPosit))
+        		{
+        	        GridView gv1 = (GridView) findViewById(R.id.boardGrid);
+        	            
+        	        int targetId = (getBoardImageAdapter().isLightPiece(currPosit))?R.drawable.light_target:R.drawable.dark_target;
+        	            
+        	        BoardImageAdapter boardImageAdap = 
+        	            	(BoardImageAdapter) gv1.getAdapter();
+        	            
+    	        	// isValidMove() can crash if currPosit points to a piece that is
+    	        	// for next turn, and that piece can check 
+                	// temporarily flip turn to avoid the crash
+                	boolean flipTurn = (boardImageAdap.isLightsTurn() !=
+                			            boardImageAdap.isLightPiece(currPosit));
+                	
+                	if(flipTurn) {
+                		boardImageAdap.flipTurn();
+                	}
+                	
+        	        for(int endPosit = 0; endPosit < count; ++endPosit) {
+        	            if( boardImageAdap.isValidMove(currPosit,endPosit) )
+        	            {
+        	              	((ImageView) gv1.getChildAt(endPosit)).setBackgroundResource(targetId);
+        	            }
+        	        }
+        	        
+                	if(flipTurn) {
+                		boardImageAdap.flipTurn();
+                	}
+        	    }
+        			
                 // To protect against problems related to dragging the 
                 // piece off the board, here we want to clear all the
                 // backgrounds of all the squares with pieces:
@@ -1240,6 +1364,7 @@ public class Chess960VariantsActivity extends Activity
                     return returnVal;
     			}
     			
+
     			ImageView startSquareImageView = 
         			(ImageView) parent.getChildAt(mStartOfMoveSquare);
     			
@@ -1264,7 +1389,7 @@ public class Chess960VariantsActivity extends Activity
                 		
                 	mIsPawnPromo = getBoardImageAdapter().updateAfterMove(
                 					   mStartOfMoveSquare,currPosit);
-                	
+            		clearTargetMarkers();
                 	setUpButtons();
                 		
                 	if(mIsPawnPromo)

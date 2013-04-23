@@ -149,63 +149,57 @@
             android:gravity="bottom"
             android:background="@color/brown"
             android:layout_weight="1.0"/>
-            
-       <LinearLayout
+
+        <LinearLayout
             android:id="@+id/settingsLayout"
-            android:orientation="horizontal"
-            android:layout_width="match_parent"  
+            android:layout_width="match_parent"
             android:layout_height="0dp"
-            android:background="@color/brown"
             android:layout_weight="1.0"
-            android:weightSum="5.0">
-            <FrameLayout
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:background="@color/brown"
-                android:layout_weight="0.5"/>
+            android:background="@color/brown"
+            android:orientation="horizontal"
+            android:weightSum="5.0" >
+
             <ImageButton
                 android:id="@+id/soundToggleButton"
-                android:scaleType="centerInside"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
-                android:src="@drawable/sound_enabled"
+                android:layout_weight="1.0"
                 android:background="@null"
                 android:onClick="toggleSound"
-                android:layout_weight="1.0"/>
-            <FrameLayout
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:background="@color/brown"
-                android:layout_weight="0.5"/>
+                android:scaleType="centerInside"
+                android:src="@drawable/sound_enabled" />
+
             <ImageButton
                 android:id="@+id/autoRotateToggleButton"
-                android:scaleType="centerInside"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
-                android:src="@drawable/auto_rotate_enabled"
+                android:layout_weight="1.0"
                 android:background="@null"
                 android:onClick="toggleAutoRotate"
-                android:layout_weight="1.0"/>
-            <FrameLayout
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:background="@color/brown"
-                android:layout_weight="0.5"/>
+                android:scaleType="centerInside"
+                android:src="@drawable/auto_rotate_enabled" />
+
             <ImageButton
                 android:id="@+id/expandButton"
-                android:scaleType="centerInside"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
-                android:src="@drawable/expand_disabled"
+                android:layout_weight="1.0"
                 android:background="@null"
                 android:onClick="toggleBoardExpand"
-                android:layout_weight="1.0"/>
-            <FrameLayout
+                android:scaleType="centerInside"
+                android:src="@drawable/expand_disabled" />
+
+            <ImageButton
+                android:id="@+id/killToggleButton"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
-                android:background="@color/brown"
-                android:layout_weight="0.5"/>
-        </LinearLayout> 
+                android:layout_weight="1.0"
+                android:background="@null"
+                android:onClick="toggleKill"
+                android:scaleType="centerInside"
+                android:src="@drawable/kill_disabled" />
+
+        </LinearLayout>
             
        <FrameLayout
             android:id="@+id/lightCapturedPieces"
